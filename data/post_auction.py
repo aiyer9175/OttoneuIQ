@@ -143,7 +143,9 @@ def merge_player_context(roster, ros, avg, prospects):
     merged["Median_Salary"] = pd.to_numeric(merged["Median_Salary"], errors="coerce").fillna(0)
     merged["Last10_Salary"] = pd.to_numeric(merged["Last10_Salary"], errors="coerce").fillna(0)
     merged["Roster%"] = pd.to_numeric(merged["Roster%"], errors="coerce").fillna(0)
-    merged["Is_Prospect"] = merged["Prospect_Rank"].notna()
+    merged["Prospect_Listed"] = merged["Prospect_Rank"].notna()
+    merged["Is_Prospect"] = merged["Prospect_Listed"]
+    merged["Has_Minors_Data"] = False
     merged["MLB_Level"] = (~merged["Is_Prospect"]) | merged["Prospect_Level"].isin(MLB_LEVELS)
     merged["Effective_Positions"] = merged.apply(resolve_positions, axis=1)
     merged["Future_Value"] = merged.apply(future_value, axis=1)
@@ -294,7 +296,8 @@ def build_keep_cut_report(merged):
         "Future_Value", "Future_Surplus", "ROS_Surplus", "Market_Surplus", "Stock_Change",
         "YTD_Value", "YTD_ROS_Gap", "Banked_Value_Signal", "Stock_Label", "Role_Change",
         "Active_Slot",
-        "MLB_Level", "Is_Prospect", "Prospect_Level", "Prospect_Rank", "Cut_Penalty",
+        "MLB_Level", "Prospect_Listed", "Has_Minors_Data", "Is_Prospect",
+        "Prospect_Level", "Prospect_Rank", "Cut_Penalty",
         "Cap_Recovered", "Recommendation",
     ]
     for col in columns:

@@ -26,6 +26,9 @@ def apply_prospect_graduation(df):
     out = df.copy()
     if "Is_Prospect" not in out.columns:
         return out
-    out["Prospect_Listed"] = out["Is_Prospect"].fillna(False).astype(bool)
+    if "Prospect_Listed" not in out.columns:
+        out["Prospect_Listed"] = out["Is_Prospect"].fillna(False).astype(bool)
+    else:
+        out["Prospect_Listed"] = out["Prospect_Listed"].fillna(False).astype(bool)
     out["Is_Prospect"] = out.apply(is_ungraduated_prospect, axis=1)
     return out

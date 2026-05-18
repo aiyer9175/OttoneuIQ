@@ -76,10 +76,24 @@ def build_player_value_table(
     updates["NameKey"] = updates["Name"].apply(normalize_text)
     update_cols = [
         "NameKey", "Updated_Prospect_Value", "Prospect_Update", "Confidence_Label",
-        "Evidence_Score", "Pipeline_Rank", "Composite_Rank",
+        "Evidence_Score", "Pipeline_Rank", "Composite_Rank", "Match_Status",
     ]
     updates = updates.sort_values("Updated_Prospect_Value", ascending=False).drop_duplicates("NameKey")
     values = values.merge(updates[update_cols], on="NameKey", how="left")
+    values["Has_Minors_Data"] = values["Updated_Prospect_Value"].notna()
+    prospect_source_match = (
+        values["Prospect_Listed"].fillna(False)
+        | values["Pipeline_Rank"].notna()
+        | values["Composite_Rank"].notna()
+    )
+    values["Prospect_Listed"] = prospect_source_match
+    values["Is_Prospect"] = prospect_source_match
+    prospect_update_cols = [
+        "Updated_Prospect_Value", "Prospect_Update", "Confidence_Label",
+        "Evidence_Score", "Pipeline_Rank", "Composite_Rank", "Match_Status",
+    ]
+    non_listed_minors = values["Has_Minors_Data"] & ~values["Prospect_Listed"]
+    values.loc[non_listed_minors, prospect_update_cols] = pd.NA
 
     stock = load_or_build_mlb_stock(mlb_stock)
     stock_cols = [

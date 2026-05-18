@@ -682,6 +682,9 @@ with tab_trends:
 
 with tab_prospects:
     updates = cached_prospect_updates(data_source, refresh_token)
+    updates = updates[
+        updates["Pipeline_Rank"].notna() | updates["Composite_Rank"].notna()
+    ].copy()
     control_cols = st.columns(3)
     mode = control_cols[0].selectbox("Prospect view", ["risers", "fallers", "top values"])
     position_options = sorted({
@@ -1092,7 +1095,8 @@ with tab_keepcut:
                     [
                         "Name", "Positions", "Salary", "Future_Value", "Future_Surplus",
                         "YTD_Value", "YTD_ROS_Gap", "Stock_Label", "Role_Change",
-                        "Active_Slot", "MLB_Level", "Is_Prospect", "Recommendation",
+                        "Active_Slot", "MLB_Level", "Prospect_Listed", "Has_Minors_Data",
+                        "Is_Prospect", "Recommendation",
                     ]
                 ].sort_values(["Recommendation", "Future_Surplus"], ascending=[True, False]),
                 use_container_width=True,
