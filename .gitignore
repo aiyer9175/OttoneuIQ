@@ -1,0 +1,23 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# Local/generated app artifacts
+data_cache/
+post_auction_reports/
+live_auction_results.csv
+live_team_rosters.csv
+data/__pycache__/
+data/full_480_draft_results.csv
+data/final_draft_results.csv
+data/final_team_rosters.csv
+data/live_auction_results.csv
+data/live_team_rosters.csv
+data/lob_draft_results.csv
+data/auction_sim_strategy_runs.csv
+data/auction_bandit_decisions.csv
+data/team_1_cut_keep_advice.csv
