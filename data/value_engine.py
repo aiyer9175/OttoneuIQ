@@ -9,7 +9,7 @@ from mlb_stock import DEFAULT_OUTPUT as MLB_STOCK_OUTPUT, build_mlb_stock
 from post_auction import build_reports, normalize_name
 from prospect_updates import DEFAULT_OUTPUT, build_prospect_updates, normalize_text
 from data_sources import resolve_data_paths
-from prospect_status import apply_prospect_graduation
+from prospect_status import add_recent_mlb_playing_time, apply_prospect_graduation
 
 
 DEFAULT_ROSTERS = "current_rosters.csv"
@@ -112,6 +112,7 @@ def build_player_value_table(
         how="left",
         suffixes=("", "_MLB"),
     )
+    values = add_recent_mlb_playing_time(values)
     values = apply_prospect_graduation(values)
 
     values["Base_Value"] = values["Future_Value"]

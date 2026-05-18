@@ -9,7 +9,7 @@ warnings.filterwarnings("ignore", message="Pandas requires version")
 import pandas as pd
 
 from data_sources import resolve_data_paths
-from prospect_status import apply_prospect_graduation
+from prospect_status import add_recent_mlb_playing_time, apply_prospect_graduation
 from valuation import ROSTER_SLOTS, clean_prospect_name, eligible_roster_slots, normalize_player_positions
 
 
@@ -160,7 +160,8 @@ def merge_player_context(roster, ros, avg, prospects):
 def apply_mlb_stock_context(merged, stock_path=DEFAULT_MLB_STOCK_FILE):
     stock = load_or_build_mlb_stock(stock_path)
     if stock.empty or "PlayerIdKey" not in merged.columns:
-        return merged
+        merged = add_recent_mlb_playing_time(merged)
+        return apply_prospect_graduation(merged)
 
     stock_cols = [
         "PlayerIdKey", "Preseason_Value", "ROS_Value", "Projection_Change",
@@ -186,6 +187,7 @@ def apply_mlb_stock_context(merged, stock_path=DEFAULT_MLB_STOCK_FILE):
     merged["Role_Change"] = merged["Role_Change"].fillna("Standard")
     merged["Stock_Label"] = merged["Stock_Label"].fillna("Standard")
     merged["Stock_Confidence"] = merged["Confidence_Label"].fillna("Standard")
+    merged = add_recent_mlb_playing_time(merged)
     merged = apply_prospect_graduation(merged)
     return merged
 
