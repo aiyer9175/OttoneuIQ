@@ -2,7 +2,6 @@ import os
 import sys
 import tempfile
 
-import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -148,6 +147,11 @@ def team_active_lineup_dataframe(room, team_idx):
 
 
 def trend_value_chart(player_rows):
+    try:
+        import altair as alt
+    except Exception:
+        return None
+
     chart_data = player_rows.copy()
     chart_data["Snapshot_Date"] = pd.to_datetime(chart_data["Snapshot_Date"], errors="coerce")
     chart_data["Snapshot_Label"] = chart_data["Snapshot_Date"].dt.strftime("%Y-%m-%d")
