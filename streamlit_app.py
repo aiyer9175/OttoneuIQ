@@ -149,18 +149,19 @@ def team_active_lineup_dataframe(room, team_idx):
 def trend_value_chart(player_rows):
     try:
         import altair as alt
-    except Exception:
-        return None
+    except Exception as exc:
+        return None, str(exc)
 
     chart_data = player_rows.copy()
     chart_data["Snapshot_Date"] = pd.to_datetime(chart_data["Snapshot_Date"], errors="coerce")
-    chart_data["Snapshot_Label"] = chart_data["Snapshot_Date"].dt.strftime("%Y-%m-%d")
-    chart_data["Snapshot_Label"] = chart_data["Snapshot_Label"].fillna(chart_data["Snapshot"].astype(str))
+    if "Snapshot_Label" not in chart_data.columns:
+        chart_data["Snapshot_Label"] = chart_data["Snapshot_Date"].dt.strftime("%Y-%m-%d")
+        chart_data["Snapshot_Label"] = chart_data["Snapshot_Label"].fillna(chart_data["Snapshot"].astype(str))
     for col in ["Current_Value", "Context_Value"]:
         chart_data[col] = pd.to_numeric(chart_data[col], errors="coerce")
     chart_data = chart_data.dropna(subset=["Current_Value", "Context_Value"])
     if chart_data.empty:
-        return None
+        return None, None
 
     chart_data["Low_Value"] = chart_data[["Current_Value", "Context_Value"]].min(axis=1)
     chart_data["High_Value"] = chart_data[["Current_Value", "Context_Value"]].max(axis=1)
@@ -190,7 +191,7 @@ def trend_value_chart(player_rows):
         y=alt.Y("Context_Value:Q", title="Dollars", scale=alt.Scale(zero=False)),
         tooltip=tooltip,
     )
-    return (value_range + ros_tick + context_line).properties(height=320)
+    return (value_range + ros_tick + context_line).properties(height=320), None
 
 
 def start_next_nomination(room, human_choice=None):
@@ -641,9 +642,11 @@ with tab_trends:
                 if len(ph) >= 2:
                     st.subheader("Trend Graph")
                     st.caption("Orange line is context value. Gray range shows ROS-to-context spread at each snapshot; blue tick is ROS value.")
-                    chart = trend_value_chart(ph)
+                    chart, chart_error = trend_value_chart(ph)
                     if chart is not None:
                         st.altair_chart(chart, use_container_width=True)
+                    elif chart_error:
+                        st.caption(f"Trend graph unavailable: {chart_error}")
                     else:
                         st.caption("No numeric value history is available for this player yet.")
                 elif len(ph) == 1:

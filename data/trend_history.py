@@ -78,6 +78,44 @@ def build_trend_history(cache_root=DEFAULT_CACHE_DIR):
     return history.sort_values(["PlayerIdKey", "Snapshot"]).reset_index(drop=True)
 
 
+def snapshot_stage(snapshot_date, latest_date=None):
+    if pd.isna(snapshot_date):
+        return "snapshot"
+    date = pd.Timestamp(snapshot_date).date()
+    if date.year <= 2025:
+        return "2025 end"
+    if date.month <= 3:
+        return "2026 start"
+    if latest_date is not None and date == latest_date:
+        return "today"
+    return "in-season"
+
+
+def compact_history_milestones(history):
+    if history.empty:
+        return history
+    compact = history.copy()
+    compact["Snapshot_Date_Parsed"] = pd.to_datetime(compact["Snapshot_Date"], utc=True, errors="coerce")
+    valid_dates = compact["Snapshot_Date_Parsed"].dropna()
+    latest_date = valid_dates.dt.date.max() if not valid_dates.empty else None
+    compact["Snapshot_Stage"] = compact["Snapshot_Date_Parsed"].apply(lambda value: snapshot_stage(value, latest_date))
+    compact = compact[compact["Snapshot_Stage"].isin({"2025 end", "2026 start", "today"})].copy()
+    if compact.empty:
+        return compact.drop(columns=["Snapshot_Date_Parsed"], errors="ignore")
+
+    stage_order = {"2025 end": 0, "2026 start": 1, "today": 2}
+    compact["Snapshot_Stage_Order"] = compact["Snapshot_Stage"].map(stage_order)
+    compact = (
+        compact.sort_values(["PlayerIdKey", "Snapshot_Stage_Order", "Snapshot_Date_Parsed", "Snapshot"])
+        .groupby(["PlayerIdKey", "Snapshot_Stage"], as_index=False, sort=False)
+        .tail(1)
+        .sort_values(["PlayerIdKey", "Snapshot_Stage_Order"])
+        .reset_index(drop=True)
+    )
+    compact["Snapshot_Label"] = compact["Snapshot_Stage"]
+    return compact.drop(columns=["Snapshot_Date_Parsed", "Snapshot_Stage_Order"], errors="ignore")
+
+
 def player_history(history, query, team=None):
     if history.empty:
         return history
@@ -94,7 +132,8 @@ def player_history(history, query, team=None):
         first_id = exact_names.sort_values("Snapshot")["PlayerIdKey"].iloc[-1]
     else:
         first_id = exact_names["PlayerIdKey"].iloc[0]
-    return history[history["PlayerIdKey"].eq(str(first_id))].sort_values("Snapshot")
+    ph = history[history["PlayerIdKey"].eq(str(first_id))].sort_values("Snapshot")
+    return compact_history_milestones(ph)
 
 
 def latest_movement(history, min_latest_context=3.0):
@@ -103,7 +142,7 @@ def latest_movement(history, min_latest_context=3.0):
     numeric_cols = ["Current_Value", "Context_Value", "Skill_Score", "YTD_Value", "Trend_Trade_Adjustment"]
     rows = []
     for _, group in history.groupby("PlayerIdKey"):
-        ordered = group.sort_values("Snapshot")
+        ordered = compact_history_milestones(group).sort_values("Snapshot")
         if len(ordered) < 2:
             continue
         prev = ordered.iloc[-2]
