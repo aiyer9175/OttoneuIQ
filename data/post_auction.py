@@ -10,6 +10,7 @@ import pandas as pd
 
 from data_sources import resolve_data_paths
 from prospect_status import add_recent_mlb_playing_time, apply_prospect_graduation
+from role_risk import apply_role_risk_adjustment
 from valuation import ROSTER_SLOTS, clean_prospect_name, eligible_roster_slots, normalize_player_positions
 
 
@@ -167,7 +168,7 @@ def apply_mlb_stock_context(merged, stock_path=DEFAULT_MLB_STOCK_FILE):
         "PlayerIdKey", "Preseason_Value", "ROS_Value", "Projection_Change",
         "MLB_Stock_Change", "YTD_Value", "YTD_ROS_Gap", "Banked_Value_Signal",
         "Skill_Score", "Role_Change", "Stock_Label", "Confidence_Label",
-        "Player_Type", "YTD_PA", "YTD_IP",
+        "Player_Type", "YTD_PA", "YTD_IP", "ROS_IP",
     ]
     for col in stock_cols:
         if col not in stock.columns:
@@ -178,8 +179,12 @@ def apply_mlb_stock_context(merged, stock_path=DEFAULT_MLB_STOCK_FILE):
     merged["Model_Future_Value"] = merged["Future_Value"]
     mlb_value = pd.to_numeric(merged["ROS_Value"], errors="coerce").notna()
     merged.loc[mlb_value, "Future_Value"] = pd.to_numeric(merged.loc[mlb_value, "ROS_Value"], errors="coerce")
+    merged["Role_Risk_Adjustment"] = 0.0
+    adjusted = apply_role_risk_adjustment(merged.loc[mlb_value], "Future_Value")
+    for col in ["Future_Value", "Role_Risk_Adjustment"]:
+        merged.loc[mlb_value, col] = adjusted[col]
     merged["Future_Surplus"] = merged["Future_Value"] - merged["Salary"]
-    merged["Stock_Change"] = pd.to_numeric(merged["MLB_Stock_Change"], errors="coerce").fillna(0)
+    merged["Stock_Change"] = pd.to_numeric(merged["MLB_Stock_Change"], errors="coerce").fillna(0) + pd.to_numeric(merged.get("Role_Risk_Adjustment", 0), errors="coerce").fillna(0)
     merged["YTD_Value"] = pd.to_numeric(merged["YTD_Value"], errors="coerce").fillna(0)
     merged["YTD_ROS_Gap"] = pd.to_numeric(merged["YTD_ROS_Gap"], errors="coerce").fillna(0)
     merged["Banked_Value_Signal"] = pd.to_numeric(merged["Banked_Value_Signal"], errors="coerce").fillna(0)
@@ -296,6 +301,7 @@ def build_keep_cut_report(merged):
     columns = [
         "Team Name", "Name", "PlayerIdKey", "MLB Team", "Positions", "Salary", "ROS_Dollars", "Avg_Salary",
         "Future_Value", "Future_Surplus", "ROS_Surplus", "Market_Surplus", "Stock_Change",
+        "Role_Risk_Adjustment",
         "YTD_Value", "YTD_ROS_Gap", "Banked_Value_Signal", "Stock_Label", "Role_Change",
         "Active_Slot",
         "MLB_Level", "Prospect_Listed", "Has_Minors_Data", "Is_Prospect",

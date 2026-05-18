@@ -10,6 +10,7 @@ from post_auction import build_reports, normalize_name
 from prospect_updates import DEFAULT_OUTPUT, build_prospect_updates, normalize_text
 from data_sources import resolve_data_paths
 from prospect_status import add_recent_mlb_playing_time, apply_prospect_graduation
+from role_risk import apply_role_risk_adjustment
 
 
 DEFAULT_ROSTERS = "current_rosters.csv"
@@ -100,7 +101,7 @@ def build_player_value_table(
         "PlayerIdKey", "MLBAMIDKey", "Preseason_Value", "ROS_Value", "Projection_Change",
         "MLB_Stock_Change", "Skill_Score", "Role_Change", "Stock_Label",
         "YTD_Value", "YTD_ROS_Gap", "Banked_Value_Signal", "Confidence_Label",
-        "Player_Type", "YTD_PA", "YTD_IP",
+        "Player_Type", "YTD_PA", "YTD_IP", "ROS_IP",
     ]
     for col in stock_cols:
         if col not in stock.columns:
@@ -120,11 +121,14 @@ def build_player_value_table(
     mlb_match = values["ROS_Value"].notna()
     values.loc[mlb_match, "Base_Value"] = values.loc[mlb_match, "Preseason_Value"]
     values.loc[mlb_match, "Current_Value"] = values.loc[mlb_match, "ROS_Value"]
+    values["Role_Risk_Adjustment"] = 0.0
+    adjusted = apply_role_risk_adjustment(values.loc[mlb_match], "Current_Value")
+    for col in ["Current_Value", "Role_Risk_Adjustment"]:
+        values.loc[mlb_match, col] = adjusted[col]
     prospect_match = values["Updated_Prospect_Value"].notna() & values["Is_Prospect"] & ~mlb_match
     values.loc[prospect_match, "Current_Value"] = values.loc[prospect_match, "Updated_Prospect_Value"]
     values["Current_Surplus"] = values["Current_Value"] - values["Salary"]
     values["Stock_Change"] = values["Current_Value"] - values["Base_Value"]
-    values.loc[mlb_match, "Stock_Change"] = values.loc[mlb_match, "MLB_Stock_Change"]
     values["Value_Source"] = "ROS/Market"
     values.loc[mlb_match, "Value_Source"] = "MLB ROS Auction"
     values.loc[prospect_match, "Value_Source"] = "Prospect Posterior"

@@ -423,7 +423,7 @@ with tab_stock:
             [
                 "Team Name", "Name", "Positions", "Salary", "Current_Value",
                 "Current_Surplus", "Stock_Change", "YTD_Value", "YTD_ROS_Gap",
-                "Stock_Label", "Role_Change", "MLB_Status", "Status_Flag",
+                "Role_Risk_Adjustment", "Stock_Label", "Role_Change", "MLB_Status", "Status_Flag",
                 "Latest_Transaction_Date", "Value_Source", "Confidence_Label",
             ]
         ],
@@ -616,7 +616,7 @@ with tab_trends:
             detail_cols = [
                 "Team Name", "Name", "Positions", "Eligible_Position_Ranks", "Primary_Position", "Position_Rank", "Player_Role",
                 "Salary", "Current_Value", "Context_Value",
-                "Trend_Trade_Adjustment", "Trend_Label", "Trend_Sample", "YTD_Value",
+                "Role_Risk_Adjustment", "Trend_Trade_Adjustment", "Trend_Label", "Trend_Sample", "YTD_Value",
                 "YTD_ROS_Gap", "Projection_Change", "Skill_Score", "YTD_AVG", "YTD_OBP",
                 "YTD_SLG", "YTD_HR", "YTD_RBI", "YTD_SB", "YTD_R", "SC_xwOBA",
                 "SC_xwOBA_Allowed", "Role_Change",
@@ -1095,7 +1095,7 @@ with tab_keepcut:
                     [
                         "Name", "Positions", "Salary", "Future_Value", "Future_Surplus",
                         "YTD_Value", "YTD_ROS_Gap", "Stock_Label", "Role_Change",
-                        "Active_Slot", "MLB_Level", "Prospect_Listed", "Has_Minors_Data",
+                        "Role_Risk_Adjustment", "Active_Slot", "MLB_Level", "Prospect_Listed", "Has_Minors_Data",
                         "Is_Prospect", "Recommendation",
                     ]
                 ].sort_values(["Recommendation", "Future_Surplus"], ascending=[True, False]),
